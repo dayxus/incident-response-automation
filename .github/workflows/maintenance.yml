@@ -50,7 +50,16 @@ jobs:
           set -e
           echo "status=$status" >> "$GITHUB_OUTPUT"
           echo "--- pip-audit exit status: $status"
-          test -f pip-audit-report.md && cat pip-audit-report.md
+          # pip-audit writes no report file when it finds nothing, so never gate the step
+          # on the file existing: a clean audit must not fail the run.
+          if [ ! -s pip-audit-report.md ]; then
+            if [ "$status" -eq 0 ]; then
+              printf 'pip-audit found no known vulnerabilities in requirements.txt.\n' > pip-audit-report.md
+            else
+              printf 'pip-audit exited with status %s without writing a report file.\n' "$status" > pip-audit-report.md
+            fi
+          fi
+          cat pip-audit-report.md
 
       - name: Open an issue with the vulnerability report
         if: steps.audit.outputs.status == '1'
