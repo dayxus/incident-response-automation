@@ -53,7 +53,7 @@ jobs:
           test -f pip-audit-report.md && cat pip-audit-report.md
 
       - name: Open an issue with the vulnerability report
-        if: steps.audit.outputs.status != '0'
+        if: steps.audit.outputs.status == '1'
         run: |
           set -euo pipefail
           report="$(cat pip-audit-report.md 2>/dev/null || echo 'pip-audit produced no report')"
@@ -66,15 +66,23 @@ jobs:
             echo '```'
             echo "$report"
             echo '```'
+            echo
+            echo "Tracked here instead of failing the run: findings like this usually need an"
+            echo "upstream release (a transitive pin) before they can be fixed."
           } > issue-body.md
           gh issue create \
             --repo "$GITHUB_REPOSITORY" \
             --title "maintenance: vulnerable dependencies reported ($(date -u +%Y-%m-%d))" \
-            --body-file issue-body.md \
-            --label "maintenance" || gh issue create \
+            --body-file issue-body.md || gh issue create \
             --repo "$GITHUB_REPOSITORY" \
             --title "maintenance: vulnerable dependencies reported ($(date -u +%Y-%m-%d))" \
             --body-file issue-body.md
+
+      - name: Fail when pip-audit itself errored
+        if: steps.audit.outputs.status != '0' && steps.audit.outputs.status != '1'
+        run: |
+          echo "pip-audit exited with status ${{ steps.audit.outputs.status }}"
+          exit 1
 
       # 2. Payload fixtures vs the committed schema -----------------------
       - name: Validate the committed payloads against schemas/
@@ -140,8 +148,8 @@ jobs:
             --body-file audit-issue-body.md || true
           exit 1
 
-      - name: Fail the run when a step above failed
-        if: steps.audit.outputs.status != '0' || steps.idempotency.outputs.status != '0'
+      - name: Fail the run when a hard check failed
+        if: steps.idempotency.outputs.status != '0'
         run: |
           echo "at least one weekly check needs attention; see the issues opened by this run"
           exit 1
