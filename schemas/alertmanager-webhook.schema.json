@@ -1,0 +1,145 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/dayxus/incident-response-automation/schemas/alertmanager-webhook.schema.json",
+  "title": "Alertmanager webhook message",
+  "description": "Body Alertmanager POSTs to a receiver declared as webhook_configs (payload version 4). Field names and shapes follow notify/webhook/webhook.go (Message) and the serialised model.Alert of the upstream project; scripts/sync_schema.py re-checks the top-level fields against the latest release tag. endsAt carries the Go zero time 0001-01-01T00:00:00Z while an alert is still firing.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "groupKey",
+    "status",
+    "receiver",
+    "groupLabels",
+    "commonLabels",
+    "commonAnnotations",
+    "externalURL",
+    "alerts"
+  ],
+  "properties": {
+    "alerts": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/alert"
+      }
+    },
+    "commonAnnotations": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      },
+      "description": "Annotations shared by every alert in the delivery."
+    },
+    "commonLabels": {
+      "$ref": "#/$defs/labelSet",
+      "description": "Labels shared by every alert in the delivery."
+    },
+    "externalURL": {
+      "type": "string",
+      "description": "Base URL of the Alertmanager instance that sent the payload."
+    },
+    "groupKey": {
+      "type": "string",
+      "description": "Stable identity of the alert group that produced this delivery."
+    },
+    "groupLabels": {
+      "$ref": "#/$defs/labelSet",
+      "description": "Labels the group_by aggregation produced."
+    },
+    "notification_reason": {
+      "type": "string",
+      "description": "Reason Alertmanager attached to this notification (upstream template data field). Releases that do not populate it omit the key, so it is not required here."
+    },
+    "receiver": {
+      "type": "string",
+      "description": "Name of the receiver in the Alertmanager configuration."
+    },
+    "routeLabels": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      },
+      "description": "Labels of the route that matched, as rendered by upstream template data. Omitted by releases that do not populate it."
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "firing",
+        "resolved"
+      ],
+      "description": "Group-level status: resolved only when every alert in the group resolved."
+    },
+    "truncatedAlerts": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Alerts dropped because max_alerts was exceeded."
+    },
+    "version": {
+      "type": "string",
+      "description": "Payload version, currently \"4\".",
+      "enum": [
+        "4"
+      ]
+    }
+  },
+  "$defs": {
+    "labelSet": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "alert": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "labels",
+        "annotations",
+        "startsAt",
+        "endsAt"
+      ],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": [
+            "firing",
+            "resolved"
+          ]
+        },
+        "labels": {
+          "$ref": "#/$defs/labelSet",
+          "description": "Alert identity. incidentd derives the same fingerprint Alertmanager does when the field below is absent."
+        },
+        "annotations": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "startsAt": {
+          "type": "string",
+          "description": "RFC3339 timestamp of the first firing evaluation."
+        },
+        "endsAt": {
+          "type": "string",
+          "description": "RFC3339 timestamp of the resolution, or 0001-01-01T00:00:00Z while firing. This is the clock incidentd uses for MTTR."
+        },
+        "generatorURL": {
+          "type": "string",
+          "description": "Link back to the rule that fired the alert."
+        },
+        "fingerprint": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{16}$",
+          "description": "SHA-256 of the sorted label set, truncated to 8 bytes by Alertmanager."
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Set by some Alertmanager releases when an alert was updated in flight."
+        }
+      }
+    }
+  }
+}

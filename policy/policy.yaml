@@ -1,0 +1,115 @@
+# incidentd routing policy — synthetic SRE lab (no production data).
+#
+# Everything the severity engine knows lives here: tiers per service, the
+# severity rules evaluated top-down (first match wins), where each route
+# notifies and how long an acknowledgement may take. Change this file and the
+# incident classification changes with it — no code deploy involved.
+
+version: 1
+
+defaults:
+  severity: Sev3
+  owner: lab-oncall
+  route: chat-sre
+  ack_deadline_minutes: 60
+  resolve_deadline_minutes: 480
+
+dedupe:
+  # Alerts with the same fingerprint arriving inside this window are attached to
+  # the open incident instead of creating a new one.
+  window_seconds: 600
+  # A fingerprint that fires again this soon after resolution reopens the same
+  # incident (flap protection) instead of paging twice.
+  suppression_seconds: 900
+  group_by:
+    - service
+    - alertname
+    - cluster
+
+services:
+  checkout-api:
+    tier: 1
+    owner: payments-oncall
+    slo: checkout-availability-99.95
+    runbook: examples/playbook/README.md#checkout-api
+    ack_deadline_minutes: 5
+    resolve_deadline_minutes: 120
+  payments-worker:
+    tier: 1
+    owner: payments-oncall
+    slo: payments-settlement-freshness
+    runbook: examples/playbook/README.md#payments-worker
+    ack_deadline_minutes: 5
+    resolve_deadline_minutes: 120
+  search-api:
+    tier: 2
+    owner: search-oncall
+    slo: search-latency-p99
+    runbook: examples/playbook/README.md#search-api
+    ack_deadline_minutes: 15
+  recommendations:
+    tier: 3
+    owner: growth-oncall
+    slo: recommendations-freshness
+    ack_deadline_minutes: 60
+  reporting-batch:
+    tier: 3
+    owner: data-oncall
+    slo: reporting-freshness
+    ack_deadline_minutes: 120
+
+# Evaluated in order; the first rule whose `when` matches wins. The last rule
+# has an empty `when`, so it always matches: that is the fallback.
+severity_rules:
+  - name: critical-tier1
+    when:
+      alert_severity: critical
+      service_tier: 1
+    severity: Sev1
+    owner: primary-oncall
+    route: page-primary
+    ack_deadline_minutes: 5
+    resolve_deadline_minutes: 120
+  - name: critical-tier2
+    when:
+      alert_severity: critical
+      service_tier: 2
+    severity: Sev2
+    owner: secondary-oncall
+    route: page-secondary
+    ack_deadline_minutes: 15
+    resolve_deadline_minutes: 240
+  - name: critical-unlisted-service
+    when:
+      alert_severity: critical
+    severity: Sev2
+    owner: secondary-oncall
+    route: page-secondary
+    ack_deadline_minutes: 30
+  - name: warning
+    when:
+      alert_severity: warning
+    severity: Sev3
+    route: chat-sre
+    ack_deadline_minutes: 60
+  - name: info
+    when:
+      alert_severity: info
+    severity: Sev4
+    route: chat-sre
+    ack_deadline_minutes: 240
+  - name: fallback
+    when: {}
+    severity: Sev3
+    route: chat-sre
+
+routes:
+  page-primary:
+    channel: pagerduty-primary
+    escalation_minutes: 5
+  page-secondary:
+    channel: pagerduty-secondary
+    escalation_minutes: 15
+  chat-sre:
+    channel: slack-sre-lab
+    escalation_minutes: 60

@@ -1,0 +1,50 @@
+{
+  "version": "4",
+  "groupKey": "incidentd-webhook/{alertname=\"LatencyP99High\"}:{cluster=\"lab-eu-west\", service=\"search-api\"}",
+  "truncatedAlerts": 0,
+  "status": "firing",
+  "receiver": "incidentd-webhook",
+  "groupLabels": {
+    "alertname": "LatencyP99High"
+  },
+  "commonLabels": {
+    "alertname": "LatencyP99High",
+    "cluster": "lab-eu-west",
+    "environment": "lab",
+    "instance": "search-api-5b6c7d:8080",
+    "job": "search-api",
+    "service": "search-api",
+    "severity": "warning",
+    "slo": "search-latency-p99"
+  },
+  "commonAnnotations": {
+    "summary": "search-api p99 latency above the SLO",
+    "description": "p99 950ms vs 600ms target after the 12:40 reindex; error rate flat at 0.1%.",
+    "runbook_url": "examples/playbook/README.md#search-api"
+  },
+  "externalURL": "http://alertmanager.lab.local:9093",
+  "alerts": [
+    {
+      "status": "firing",
+      "labels": {
+        "alertname": "LatencyP99High",
+        "cluster": "lab-eu-west",
+        "environment": "lab",
+        "instance": "search-api-5b6c7d:8080",
+        "job": "search-api",
+        "service": "search-api",
+        "severity": "warning",
+        "slo": "search-latency-p99"
+      },
+      "annotations": {
+        "summary": "search-api p99 latency above the SLO",
+        "description": "p99 950ms vs 600ms target after the 12:40 reindex; error rate flat at 0.1%.",
+        "runbook_url": "examples/playbook/README.md#search-api"
+      },
+      "startsAt": "2026-03-04T13:07:00Z",
+      "endsAt": "0001-01-01T00:00:00Z",
+      "generatorURL": "http://prometheus.lab.local:9090/graph?g0.expr=LatencyP99High",
+      "fingerprint": "53d649d262c37bcc"
+    }
+  ]
+}

@@ -1,0 +1,52 @@
+{
+  "version": "4",
+  "groupKey": "incidentd-webhook/{alertname=\"SettlementQueueLag\"}:{cluster=\"lab-eu-west\", service=\"payments-worker\"}",
+  "truncatedAlerts": 0,
+  "status": "firing",
+  "receiver": "incidentd-webhook",
+  "groupLabels": {
+    "alertname": "SettlementQueueLag"
+  },
+  "commonLabels": {
+    "alertname": "SettlementQueueLag",
+    "cluster": "lab-eu-west",
+    "environment": "lab",
+    "instance": "payments-worker-2f9a1:9100",
+    "job": "payments-worker",
+    "service": "payments-worker",
+    "severity": "critical",
+    "slo": "payments-settlement-freshness"
+  },
+  "commonAnnotations": {
+    "summary": "payments-worker settlement queue is lagging",
+    "description": "settlement queue depth 42k messages, oldest message 26 minutes old.",
+    "contributing_factor": "consumer restart storm after the 13:05 config reload",
+    "runbook_url": "examples/playbook/README.md#payments-worker"
+  },
+  "externalURL": "http://alertmanager.lab.local:9093",
+  "alerts": [
+    {
+      "status": "firing",
+      "labels": {
+        "alertname": "SettlementQueueLag",
+        "cluster": "lab-eu-west",
+        "environment": "lab",
+        "instance": "payments-worker-2f9a1:9100",
+        "job": "payments-worker",
+        "service": "payments-worker",
+        "severity": "critical",
+        "slo": "payments-settlement-freshness"
+      },
+      "annotations": {
+        "summary": "payments-worker settlement queue is lagging",
+        "description": "settlement queue depth 42k messages, oldest message 26 minutes old.",
+        "contributing_factor": "consumer restart storm after the 13:05 config reload",
+        "runbook_url": "examples/playbook/README.md#payments-worker"
+      },
+      "startsAt": "2026-03-04T13:09:30Z",
+      "endsAt": "0001-01-01T00:00:00Z",
+      "generatorURL": "http://prometheus.lab.local:9090/graph?g0.expr=SettlementQueueLag",
+      "fingerprint": "4c78309fdd3abae6"
+    }
+  ]
+}

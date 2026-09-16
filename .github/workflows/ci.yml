@@ -1,0 +1,81 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint-test:
+    name: lint + test (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements-dev.txt
+
+      - name: Lint (ruff check)
+        run: ruff check .
+
+      - name: Format check (ruff format --check)
+        run: ruff format --check .
+
+      - name: Test (pytest + coverage)
+        run: python -m pytest -q --cov=incidentd --cov-report=term-missing
+
+  demo:
+    name: end-to-end demo
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install runtime dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+
+      - name: Deliver the example payloads and render the postmortem
+        env:
+          PYTHON: python
+        run: bash scripts/demo.sh
+
+      - name: Verify the demo produced a postmortem with a real timeline
+        run: |
+          set -euo pipefail
+          test -s var/demo/postmortem.md
+          grep -q '^# Postmortem' var/demo/postmortem.md
+          grep -q 'alert_received' var/demo/postmortem.md
+          grep -q '^alerts_deduplicated_total 1$' var/demo/metrics.txt
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: demo-postmortem
+          path: |
+            var/demo/postmortem.md
+            var/demo/summary.txt
+            var/demo/metrics.txt
+          if-no-files-found: error

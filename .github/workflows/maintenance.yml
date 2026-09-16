@@ -1,0 +1,147 @@
+name: Weekly maintenance
+
+on:
+  schedule:
+    # Mondays 06:17 UTC — after the upstream projects cut their weekly releases.
+    - cron: "17 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: maintenance
+  cancel-in-progress: false
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements-dev.txt
+
+      - name: Author identity for commits made by this workflow
+        run: |
+          git config user.name "Jeferson Melo"
+          git config user.email "161839842+dayxus@users.noreply.github.com"
+
+      # 1. Dependency vulnerabilities -------------------------------------
+      - name: Dependency audit (pip-audit)
+        id: audit
+        run: |
+          set +e
+          python -m pip_audit -r requirements.txt --format markdown \
+            --output pip-audit-report.md --progress-spinner off
+          status=$?
+          set -e
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+          echo "--- pip-audit exit status: $status"
+          test -f pip-audit-report.md && cat pip-audit-report.md
+
+      - name: Open an issue with the vulnerability report
+        if: steps.audit.outputs.status != '0'
+        run: |
+          set -euo pipefail
+          report="$(cat pip-audit-report.md 2>/dev/null || echo 'pip-audit produced no report')"
+          {
+            echo "The weekly run of \`.github/workflows/maintenance.yml\` reported vulnerable"
+            echo "dependencies for \`requirements.txt\`."
+            echo
+            echo "Run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+            echo
+            echo '```'
+            echo "$report"
+            echo '```'
+          } > issue-body.md
+          gh issue create \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "maintenance: vulnerable dependencies reported ($(date -u +%Y-%m-%d))" \
+            --body-file issue-body.md \
+            --label "maintenance" || gh issue create \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "maintenance: vulnerable dependencies reported ($(date -u +%Y-%m-%d))" \
+            --body-file issue-body.md
+
+      # 2. Payload fixtures vs the committed schema -----------------------
+      - name: Validate the committed payloads against schemas/
+        run: python scripts/validate_payloads.py --dir examples/alertmanager
+
+      # 3. Schema drift against the current Alertmanager release ----------
+      - name: Check the webhook schema against the latest Alertmanager release
+        id: schema
+        run: python scripts/sync_schema.py --github-output "$GITHUB_OUTPUT"
+
+      - name: Commit the upstream schema change
+        if: steps.schema.outputs.changed == 'true'
+        run: |
+          set -euo pipefail
+          git add schemas/alertmanager-webhook.schema.json
+          if git diff --cached --quiet; then
+            echo "no schema diff after all"
+            exit 0
+          fi
+          git commit -m "chore(schema): sync alertmanager webhook schema"
+          git push origin HEAD:main
+
+      # 4. Extended idempotency suite + latency report --------------------
+      - name: Extended idempotency run (1000 alerts)
+        id: idempotency
+        run: |
+          set +e
+          python scripts/idempotency_audit.py \
+            --alerts 1000 \
+            --out reports/weekly-audit.md \
+            --alertmanager-version "${{ steps.schema.outputs.tag }}"
+          status=$?
+          set -e
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+
+      - name: Commit the audit report
+        run: |
+          set -euo pipefail
+          git add reports/weekly-audit.md
+          if git diff --cached --quiet; then
+            echo "report unchanged, nothing to commit"
+            exit 0
+          fi
+          git commit -m "chore(maintenance): refresh the weekly ingest audit report"
+          git push origin HEAD:main
+
+      - name: Open an issue when the audit fails
+        if: steps.idempotency.outputs.status != '0'
+        run: |
+          set -euo pipefail
+          {
+            echo "The 1000-alert idempotency run failed in the weekly maintenance workflow."
+            echo
+            echo "Run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+            echo
+            echo '```'
+            tail -40 reports/weekly-audit.md
+            echo '```'
+          } > audit-issue-body.md
+          gh issue create \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "maintenance: idempotency audit failed ($(date -u +%Y-%m-%d))" \
+            --body-file audit-issue-body.md || true
+          exit 1
+
+      - name: Fail the run when a step above failed
+        if: steps.audit.outputs.status != '0' || steps.idempotency.outputs.status != '0'
+        run: |
+          echo "at least one weekly check needs attention; see the issues opened by this run"
+          exit 1

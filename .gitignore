@@ -1,0 +1,25 @@
+# Local virtualenv and tooling caches
+.venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+htmlcov/
+.coverage
+.coverage.*
+pip-audit-report.md
+
+# Runtime state: databases and demo output are generated, never committed
+var/
+*.db
+*.db-wal
+*.db-shm
+
+# Python build artefacts
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+
+# macOS
+.DS_Store
