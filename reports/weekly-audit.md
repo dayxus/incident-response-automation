@@ -22,16 +22,16 @@ on a fresh SQLite database.
 
 | Percentile | Milliseconds |
 | --- | --- |
-| p50 | 0.104 |
-| p95 | 0.125 |
-| p99 | 0.231 |
-| mean | 0.131 |
-| max | 4.949 |
+| p50 | 0.780 |
+| p95 | 2.043 |
+| p99 | 2.788 |
+| mean | 0.992 |
+| max | 16.351 |
 
 ## Environment
 
 | Item | Value |
 | --- | --- |
-| Python | 3.9.6 |
-| Platform | macOS-26.6.2-arm64-arm-64bit |
+| Python | 3.12.14 |
+| Platform | Linux-6.17.0-1022-azure-x86_64-with-glibc2.39 |
 | Alertmanager release checked | v0.34.0 |
