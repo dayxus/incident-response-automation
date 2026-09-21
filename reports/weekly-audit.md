@@ -22,11 +22,11 @@ on a fresh SQLite database.
 
 | Percentile | Milliseconds |
 | --- | --- |
-| p50 | 0.771 |
-| p95 | 2.099 |
-| p99 | 11.462 |
-| mean | 1.417 |
-| max | 120.825 |
+| p50 | 0.680 |
+| p95 | 1.816 |
+| p99 | 2.408 |
+| mean | 0.879 |
+| max | 12.096 |
 
 ## Environment
 
