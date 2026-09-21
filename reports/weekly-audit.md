@@ -11,7 +11,7 @@ on a fresh SQLite database.
 
 | Metric | Value |
 | --- | --- |
-| Run date (UTC) | 2026-09-16 |
+| Run date (UTC) | 2026-09-21 |
 | Alerts delivered | 1000 |
 | Incidents created | 1 |
 | Alerts counted as deduplicated | 999 |
@@ -22,11 +22,11 @@ on a fresh SQLite database.
 
 | Percentile | Milliseconds |
 | --- | --- |
-| p50 | 0.780 |
-| p95 | 2.043 |
-| p99 | 2.788 |
-| mean | 0.992 |
-| max | 16.351 |
+| p50 | 0.771 |
+| p95 | 2.099 |
+| p99 | 11.462 |
+| mean | 1.417 |
+| max | 120.825 |
 
 ## Environment
 
@@ -34,4 +34,4 @@ on a fresh SQLite database.
 | --- | --- |
 | Python | 3.12.14 |
 | Platform | Linux-6.17.0-1022-azure-x86_64-with-glibc2.39 |
-| Alertmanager release checked | v0.34.0 |
+| Alertmanager release checked | v0.34.1 |
