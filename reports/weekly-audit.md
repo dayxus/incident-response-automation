@@ -11,7 +11,7 @@ on a fresh SQLite database.
 
 | Metric | Value |
 | --- | --- |
-| Run date (UTC) | 2026-09-21 |
+| Run date (UTC) | 2026-09-28 |
 | Alerts delivered | 1000 |
 | Incidents created | 1 |
 | Alerts counted as deduplicated | 999 |
@@ -22,11 +22,11 @@ on a fresh SQLite database.
 
 | Percentile | Milliseconds |
 | --- | --- |
-| p50 | 0.680 |
-| p95 | 1.816 |
-| p99 | 2.408 |
-| mean | 0.879 |
-| max | 12.096 |
+| p50 | 0.711 |
+| p95 | 1.592 |
+| p99 | 2.321 |
+| mean | 0.952 |
+| max | 11.717 |
 
 ## Environment
 
